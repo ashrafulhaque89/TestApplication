@@ -5,6 +5,8 @@ using TestApplication.Data;
 using TestApplication.DTO;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using TestApplication.Models;
+using DTO;
 
 namespace TestApplication.Controllers
 {
@@ -57,6 +59,34 @@ namespace TestApplication.Controllers
                 return NotFound();
             }
             return book_by_id;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<BookDTO>> Add_Books(AddBook bookDTO)
+        {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var book = new Book()
+            {
+                isbn = bookDTO.ISBN,
+                price = bookDTO.Book_price
+            };
+            await _context.Book.AddAsync(book);
+            await _context.SaveChangesAsync();
+
+            var book_description = new Book_description()
+            {
+                book_id = book.id,
+                book_name = bookDTO.Book_name,
+                book_description = bookDTO.Book_description
+            };
+            await _context.AddAsync(book_description);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetBooks", new { id = book.id}, bookDTO);
         }
     }
 }
