@@ -88,5 +88,50 @@ namespace TestApplication.Controllers
 
             return CreatedAtAction("GetBooks", new { id = book.id}, bookDTO);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Book>> Delete_Book(int id)
+        {
+            var book = _context.Book.Find(id);
+            var book_description = _context.Book_Description.SingleOrDefault(x => x.book_id == id);
+
+            if(book == null)
+            {
+                return NotFound();
+            }
+            else 
+            {
+                _context.Remove(book);
+                _context.Remove(book_description);
+                await _context.SaveChangesAsync();
+                return book;
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Update_Books(int id, BookDTO book)
+        {
+            if(id != book.Book_id || !BookExists(id))
+            {
+                return BadRequest();
+            }
+            else 
+            {
+                var books = _context.Book.SingleOrDefault(x => x.id == id);
+                var books_description = _context.Book_Description.SingleOrDefault(x => x.book_id == id);
+
+                books.isbn = book.ISBN;
+                books.price = book.Book_price;
+                books_description.book_name = book.Book_name;
+                books_description.book_description = book.Book_description;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+        }
+
+        private bool BookExists(int id)
+        {
+            return _context.Book.Any(x => x.id == id);
+        }
     }
 }
