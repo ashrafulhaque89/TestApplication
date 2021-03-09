@@ -62,7 +62,7 @@ namespace TestApplication.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<BookDTO>> Add_Books(AddBook bookDTO)
+        public async Task<ActionResult<AddBook>> Add_Books(AddBook bookDTO)
         {
             if(!ModelState.IsValid)
             {

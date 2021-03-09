@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Models;
 using TestApplication.Models;
 
 namespace TestApplication.Data
@@ -9,5 +10,8 @@ namespace TestApplication.Data
         public DbSet<Values> Values {get; set;}
         public DbSet<Book> Book {get; set;}
         public DbSet<Book_description> Book_Description {get; set;}
+        public DbSet<Students> Students {get; set;}
+        public DbSet<Students_Description> students_Description {get; set;}
+        public DbSet<Library> Library {get; set;}
     }
 }
