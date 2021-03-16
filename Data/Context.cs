@@ -13,5 +13,6 @@ namespace TestApplication.Data
         public DbSet<Students> Students {get; set;}
         public DbSet<Students_Description> students_Description {get; set;}
         public DbSet<Library> Library {get; set;}
+        public DbSet<User> User {get; set;}
     }
 }
