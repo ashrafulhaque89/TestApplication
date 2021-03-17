@@ -107,9 +107,18 @@ namespace Controllers
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody]UpdateModel model)
         {
+            //Finding who is logged in
+            int logged_in_user = int.Parse(User.Identity.Name);
+
             // map model to entity and set id
             var user = _mapper.Map<User>(model);
             user.Id = id;
+
+            //Rejecting access if the logged in user is not same as the user updating information
+            if(logged_in_user != id)
+            {
+                return BadRequest(new { message = "Access Denied" });
+            }
 
             try
             {

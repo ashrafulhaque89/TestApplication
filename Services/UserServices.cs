@@ -28,48 +28,23 @@ namespace Services
             _context = context;
         }
 
-        static string GenerateRandomCryptographicKey(int keyLength)
-        {
-            RNGCryptoServiceProvider rngCryptoServiceProvider = new RNGCryptoServiceProvider();
-            byte[] randomBytes = new byte[keyLength];
-            rngCryptoServiceProvider.GetBytes(randomBytes);
-            string hashstring = "";
-            foreach(var hashbyte in randomBytes)
-            {
-                hashstring += hashbyte.ToString("x2"); 
-            }
-            return hashstring;
-        }
-
         public User Authenticate(string username, string password)
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
                 return null;
+            }
 
-            var user = _context.User.SingleOrDefault(x => x.Username == username);
+            var user = _context.User.FirstOrDefault(x => x.Username == username) ?? null;
 
             // check if username exists
             if (user == null)
-                return null;
-            
-             /* Fetch the stored value */
-            string savedPasswordHash = _context.User.SingleOrDefault(x => x.Username == username).PasswordHash;
-            /* Extract the bytes */
-            string [] passwordparts = savedPasswordHash.Split(":");
-            string hashedpassword = passwordparts[0];
-            string salt = passwordparts[1];
-
-            MD5 md5 = new MD5CryptoServiceProvider();
-
-            byte[] result = md5.ComputeHash(Encoding.UTF8.GetBytes(salt + password));         
-
-            var hashstring = "";
-            foreach(var hashbyte in result)
             {
-                hashstring += hashbyte.ToString("x2"); 
+                return null;
             }
 
-            if(hashstring != hashedpassword)
+            // Granting access if the hashed password in the database matches with the password(hashed in computeHash method) entered by user.
+            if(computeHash(password) != user.PasswordHash)
             {
                 return null;
             }
@@ -90,27 +65,17 @@ namespace Services
         {
             // validation
             if (string.IsNullOrWhiteSpace(password))
+            {
                 throw new AppException("Password is required");
+            }
 
             if (_context.User.Any(x => x.Username == user.Username))
-                throw new AppException("Username \"" + user.Username + "\" is already taken");
-            
-               MD5 md5 = new MD5CryptoServiceProvider();
-
-            var salt = GenerateRandomCryptographicKey(10000);
-            var exactSalt = salt.Substring(salt.Length -2);
-
-            byte[] result = md5.ComputeHash(Encoding.UTF8.GetBytes(exactSalt + password));  
-            
-
-            var hashstring = "";
-            foreach(var hashbyte in result)
             {
-                hashstring += hashbyte.ToString("x2"); 
+                throw new AppException("Username \"" + user.Username + "\" is already taken");
             }
-            string savedPasswordHash = hashstring;
 
-            user.PasswordHash = savedPasswordHash + ":" + exactSalt;  
+            //Saving hashed password into Database table
+            user.PasswordHash = computeHash(password);  
 
             _context.User.Add(user);
             _context.SaveChanges();
@@ -118,70 +83,57 @@ namespace Services
             return user;
         }
 
-        public void Update(User userParam, string currentPassword, string password, string confirmPassword)
+        public void Update(User userParam, string currentPassword = null, string password = null, string confirmPassword = null)
         {
+            //Find the user by Id
             var user = _context.User.Find(userParam.Id);
 
-            if (user == null)
+            if (user == null) 
+            {
                 throw new AppException("User not found");
-
-            // update username if it has changed
+            }
+            // update user properties if provided
             if (!string.IsNullOrWhiteSpace(userParam.Username) && userParam.Username != user.Username)
             {
                 // throw error if the new username is already taken
                 if (_context.User.Any(x => x.Username == userParam.Username))
+                {
                     throw new AppException("Username " + userParam.Username + " is already taken");
-
-                user.Username = userParam.Username;
+                }
+                else
+                {
+                    user.Username = userParam.Username;
+                }
             }
-
-            // update user properties if provided
             if (!string.IsNullOrWhiteSpace(userParam.FirstName))
+            {
                 user.FirstName = userParam.FirstName;
-
+            }
             if (!string.IsNullOrWhiteSpace(userParam.LastName))
+            {
                 user.LastName = userParam.LastName;
-            
-             /*Get Current password*/
-            string savedPasswordHash = _context.User.SingleOrDefault(x => x.Username == userParam.Username).PasswordHash;
-            /* Extract the bytes */
-            string [] passwordparts = savedPasswordHash.Split(":");
-            string hashedpassword = passwordparts[0];
-            string salt = passwordparts[1];
-
-            MD5 md5 = new MD5CryptoServiceProvider();
-
-            byte[] result = md5.ComputeHash(Encoding.UTF8.GetBytes(salt + password));         
-
-            var hashstring = "";
-            foreach(var hashbyte in result)
-            {
-                hashstring += hashbyte.ToString("x2"); 
             }
-            if(hashstring != hashedpassword)
-            throw new AppException("Invalid Current password!");
+            if (!string.IsNullOrWhiteSpace(currentPassword))
+            {   
+                if(computeHash(currentPassword) != user.PasswordHash)
+                {
+                    throw new AppException("Invalid Current password!");
+                }
 
-            if(currentPassword == password)
-            throw new AppException("Please choose another password!");
+                if(currentPassword == password)
+                {
+                    throw new AppException("Please choose another password!");
+                }
 
-            if(password != confirmPassword)
-            throw new AppException("Password doesn't match!");
-
-            var salts = GenerateRandomCryptographicKey(10000);
-            var exactSalt = salts.Substring(salts.Length -2);
-
-            byte[] results = md5.ComputeHash(Encoding.UTF8.GetBytes(exactSalt + password));  
-            
-
-            var hashstrings = "";
-            foreach(var hashbyte in results)
-            {
-                hashstrings += hashbyte.ToString("x2"); 
+                if(password != confirmPassword)
+                {
+                    throw new AppException("Password doesn't match!");
+                }
+    
+                //Updating hashed password into Database table
+                user.PasswordHash = computeHash(password); 
             }
-            string savedPasswordHashs = hashstrings;
-
-            user.PasswordHash = savedPasswordHash + ":" + exactSalt;
-
+            
             _context.User.Update(user);
             _context.SaveChanges();
         }
@@ -194,6 +146,18 @@ namespace Services
                 _context.User.Remove(user);
                 _context.SaveChanges();
             }
+        }
+
+        private static string computeHash(string Password)
+        {
+            MD5 md5 = new MD5CryptoServiceProvider();
+            var input = md5.ComputeHash(Encoding.UTF8.GetBytes(Password));
+            var hashstring = "";
+            foreach(var hashbyte in input)
+            {
+                hashstring += hashbyte.ToString("x2"); 
+            } 
+            return hashstring;
         }
     }
 }
