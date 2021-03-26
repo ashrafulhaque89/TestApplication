@@ -18,7 +18,7 @@ namespace TestApplication.Controllers
             _context = context;
         }
 
-        [HttpGet]
+        [HttpGet("values")]
         public async Task<ActionResult<IEnumerable<Values>>> GetValues()
         {
             return await _context.Values.ToListAsync();
