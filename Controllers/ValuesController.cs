@@ -24,6 +24,12 @@ namespace TestApplication.Controllers
             return await _context.Values.ToListAsync();
         }
 
+        [HttpGet("hello")]
+        public Task<ActionResult<string>> HelloWorldTask()
+        {
+            return Task.FromResult(new ActionResult<string>("Hello World"));
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Values>> GetValues_ById(int id)
         {
