@@ -7,5 +7,6 @@ namespace Models
         public string LastName { get; set; }
         public string Username { get; set; }
         public string PasswordHash { get; set; }
+        public string AccessLevel { get; set; }
     }
 }
