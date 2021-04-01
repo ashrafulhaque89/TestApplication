@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Models;
 using Services;
+using TestApplication.Data;
 
 namespace Controllers
 {
@@ -24,11 +25,15 @@ namespace Controllers
         private IMapper _mapper;
         public IConfiguration Configuration;
 
+        private readonly Context _context;
+
         public UsersController(
+            Context context,
             IUserService userService,
             IMapper mapper,
             IConfiguration configuration)
         {
+            _context = context;
             _userService = userService;
             _mapper = mapper;
            Configuration = configuration;
@@ -68,6 +73,18 @@ namespace Controllers
                 Token = tokenString
             });
         }
+
+        [Authorize(Roles = AccessLevel.Admin)]
+        [HttpPost("accesslevel/{id}")]
+        public IActionResult ChangeAccess(int id, UpdateAccessLevelDTO model)
+        {
+            // You should check if the user exists or not and then check what is their current access level. As well as you need to create an enum or make sure that user does not pass any 
+            // value except the allowed values which are: NULL, Admin, Support, Student Lead
+            _context.User.Find(id).AccessLevel = model.AccessLevel;
+            _context.SaveChanges();
+            return Ok("User Access Level has been updated!");
+        }
+
 
         [AllowAnonymous]
         [HttpPost("register")]
