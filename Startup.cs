@@ -74,6 +74,9 @@ namespace TestApplication
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
 
+            // Adding Sendgrid Email service
+            services.AddScoped<IEmailService, EmailService>();
+
             services.AddSwaggerGen(swagger =>  
             {  
                 //This is to generate the Default UI of Swagger Documentation  

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 using AutoMapper;
 using DTO;
 using Helpers;
@@ -11,6 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Models;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using Services;
 using TestApplication.Data;
 
@@ -27,16 +30,20 @@ namespace Controllers
 
         private readonly Context _context;
 
+        private readonly IEmailService _emailService;
+
         public UsersController(
             Context context,
             IUserService userService,
             IMapper mapper,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IEmailService emailService)
         {
             _context = context;
             _userService = userService;
             _mapper = mapper;
            Configuration = configuration;
+           _emailService = emailService;
         }
 
         [AllowAnonymous]
@@ -156,6 +163,25 @@ namespace Controllers
         {
             _userService.Delete(id);
             return Ok();
+        }
+
+        [AllowAnonymous]
+        [HttpPost("email")]
+        public async Task<IActionResult> SendEmail(SendEmailDTO model)
+        {
+            var emails = new List<string>();
+            emails.Add("ashraful.haque@faculty.dorset-college.ie");
+
+            var response = await _emailService.SendEmailAsync(emails, model.Subject, model.Message);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Accepted)
+            {
+               return Ok("Email sent " + response.StatusCode);
+            }
+            else
+            {
+                return BadRequest("Email sending failed " + response.StatusCode);
+            }
         }
     }
 }
