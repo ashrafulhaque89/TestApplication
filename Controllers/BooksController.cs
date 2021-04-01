@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace TestApplication.Controllers
 {
-    [Authorize(Roles = AccessLevel.Admin)]
+    [Authorize(Roles = "Admin, Support")]
     [ApiController]
     [Route("[controller]")]
     public class BooksController : ControllerBase
