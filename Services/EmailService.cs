@@ -28,7 +28,8 @@ namespace Services
             var client = new SendGridClient(apiKey);
             var msg = new SendGridMessage()
             {
-                From = new EmailAddress("nabillucky7@gmail.com", "Dorset College"),
+                // you will need your own email address here which has been added in sendgrid as an authorized sender
+                From = new EmailAddress("your email address", "Dorset College"),
                 Subject = subject,
                 PlainTextContent = message,
                 HtmlContent = message

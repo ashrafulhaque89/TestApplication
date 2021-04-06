@@ -16,6 +16,8 @@ namespace Services
         User GetById(int id);
         User Create(User user, string password);
         void Update(User user, string currentPassword, string password, string confirmPassword);
+        User ForgotPassword(string username);
+        User ResetPassword(string username, string currentPassword, string password, string confirmPassword);
         void Delete(int id);
     }
 
@@ -159,6 +161,16 @@ namespace Services
                 hashstring += hashbyte.ToString("x2"); 
             } 
             return hashstring;
+        }
+
+        public User ForgotPassword(string username)
+        {
+            throw new NotImplementedException();
+        }
+
+        public User ResetPassword(string username, string currentPassword, string password, string confirmPassword)
+        {
+            throw new NotImplementedException();
         }
     }
 }
