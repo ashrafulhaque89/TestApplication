@@ -29,7 +29,7 @@ namespace Services
             var msg = new SendGridMessage()
             {
                 // you will need your own email address here which has been added in sendgrid as an authorized sender
-                From = new EmailAddress("your email address", "Dorset College"),
+                From = new EmailAddress("your email", "Dorset College"),
                 Subject = subject,
                 PlainTextContent = message,
                 HtmlContent = message

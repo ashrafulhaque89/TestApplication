@@ -16,7 +16,7 @@ namespace Services
         User GetById(int id);
         User Create(User user, string password);
         void Update(User user, string currentPassword, string password, string confirmPassword);
-        User ForgotPassword(string username);
+        string ForgotPassword(string username);
         User ResetPassword(string username, string currentPassword, string password, string confirmPassword);
         void Delete(int id);
     }
@@ -24,10 +24,12 @@ namespace Services
     public class UserService : IUserService
     {
         private Context _context;
+        private readonly IEmailService _emailService;
 
-        public UserService(Context context)
+        public UserService(Context context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public User Authenticate(string username, string password)
@@ -163,14 +165,54 @@ namespace Services
             return hashstring;
         }
 
-        public User ForgotPassword(string username)
+        public string ForgotPassword(string username)
         {
-            throw new NotImplementedException();
+            if(string.IsNullOrEmpty(username))
+            {
+                throw new AppException("Valid Username is requred");
+            }
+            else
+            {
+                var user = _context.User.SingleOrDefault(x => x.Username == username);
+                if(user != null)
+                {
+                    string token = GenerateRandomCryptographicKey(25);
+                    user.Token = token;
+                    _context.SaveChanges();
+                    
+                    var emailAddress = new List<string>(){username};
+                    var emailSubject = "Password Recovery";
+                    var messageBody = token;
+
+                    var response = _emailService.SendEmailAsync(emailAddress,emailSubject,messageBody);
+                    System.Console.WriteLine(response.Result.StatusCode);
+
+                    if(response.IsCompletedSuccessfully)
+                    {
+                        return new string("If your account exists, your new password will be emailed to you shortly");
+                    }
+                }
+                return new string("If your account exists, your new password will be emailed to you shortly");
+            }
         }
 
         public User ResetPassword(string username, string currentPassword, string password, string confirmPassword)
         {
             throw new NotImplementedException();
+        }
+
+        // helper method to generate random password
+        private static string GenerateRandomCryptographicKey(int keyLength)
+        {
+            RNGCryptoServiceProvider rngCryptoServiceProvider = new RNGCryptoServiceProvider();
+            byte[] randomBytes = new byte[keyLength];
+            rngCryptoServiceProvider.GetBytes(randomBytes);
+            string hashstring = "";
+            foreach(var hashbyte in randomBytes)
+            {
+                hashstring += hashbyte.ToString("x2"); 
+            }
+            return hashstring;
         }
     }
 }

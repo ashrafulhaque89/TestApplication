@@ -12,8 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Models;
-using SendGrid;
-using SendGrid.Helpers.Mail;
 using Services;
 using TestApplication.Data;
 
@@ -27,9 +25,7 @@ namespace Controllers
         private IUserService _userService;
         private IMapper _mapper;
         public IConfiguration Configuration;
-
         private readonly Context _context;
-
         private readonly IEmailService _emailService;
 
         public UsersController(
@@ -48,7 +44,7 @@ namespace Controllers
 
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public IActionResult Authenticate([FromBody]AuthenticateModel model)
+        public IActionResult Authenticate(AuthenticateModel model)
         {
             var user = _userService.Authenticate(model.Username, model.Password);
 
@@ -130,7 +126,7 @@ namespace Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody]UpdateModel model)
+        public IActionResult Update(int id, UpdateModel model)
         {
             //Finding who is logged in
             int logged_in_user = int.Parse(User.Identity.Name);
@@ -163,6 +159,13 @@ namespace Controllers
         {
             _userService.Delete(id);
             return Ok();
+        }
+
+        [AllowAnonymous]
+        [HttpPost("forgotpassword")]
+        public IActionResult ForgotPassword(ForgotPassword model)
+        {
+            return Ok(_userService.ForgotPassword(model.Username));
         }
 
         [Authorize(Roles = AccessLevel.Admin)]
