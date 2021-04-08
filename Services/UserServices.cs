@@ -17,7 +17,6 @@ namespace Services
         User Create(User user, string password);
         void Update(User user, string currentPassword, string password, string confirmPassword);
         string ForgotPassword(string username);
-        User ResetPassword(string username, string currentPassword, string password, string confirmPassword);
         void Delete(int id);
     }
 
@@ -81,6 +80,8 @@ namespace Services
             //Saving hashed password into Database table
             user.PasswordHash = computeHash(password);  
             user.AccessLevel = null;
+            user.Created = DateTime.UtcNow;
+            user.LastModified = DateTime.UtcNow;
 
             _context.User.Add(user);
             _context.SaveChanges();
@@ -108,15 +109,18 @@ namespace Services
                 else
                 {
                     user.Username = userParam.Username;
+                    user.LastModified = DateTime.UtcNow;
                 }
             }
             if (!string.IsNullOrWhiteSpace(userParam.FirstName))
             {
                 user.FirstName = userParam.FirstName;
+                user.LastModified = DateTime.UtcNow;
             }
             if (!string.IsNullOrWhiteSpace(userParam.LastName))
             {
                 user.LastName = userParam.LastName;
+                user.LastModified = DateTime.UtcNow;
             }
             if (!string.IsNullOrWhiteSpace(currentPassword))
             {   
@@ -129,14 +133,10 @@ namespace Services
                 {
                     throw new AppException("Please choose another password!");
                 }
-
-                if(password != confirmPassword)
-                {
-                    throw new AppException("Password doesn't match!");
-                }
     
                 //Updating hashed password into Database table
-                user.PasswordHash = computeHash(password); 
+                user.PasswordHash = computeHash(password);
+                user.LastModified = DateTime.UtcNow; 
             }
             
             _context.User.Update(user);
@@ -176,13 +176,14 @@ namespace Services
                 var user = _context.User.SingleOrDefault(x => x.Username == username);
                 if(user != null)
                 {
-                    string token = GenerateRandomCryptographicKey(25);
-                    user.Token = token;
+                    string password = GenerateRandomCryptographicKey(5);
+                    user.PasswordHash = computeHash(password);
+                    user.LastModified = DateTime.UtcNow;
                     _context.SaveChanges();
                     
                     var emailAddress = new List<string>(){username};
                     var emailSubject = "Password Recovery";
-                    var messageBody = token;
+                    var messageBody = password;
 
                     var response = _emailService.SendEmailAsync(emailAddress,emailSubject,messageBody);
                     System.Console.WriteLine(response.Result.StatusCode);
@@ -196,14 +197,14 @@ namespace Services
             }
         }
 
-        public User ResetPassword(string username, string currentPassword, string password, string confirmPassword)
-        {
-            throw new NotImplementedException();
-        }
-
         // helper method to generate random password
         private static string GenerateRandomCryptographicKey(int keyLength)
         {
+            char[] SPECIAL_CHARACTERS = @"!#$%&*@\".ToCharArray();
+            char[] UPPERCASE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
+            Random rand = new Random();
+            int randomSpecialCharNumber = rand.Next(0,SPECIAL_CHARACTERS.Length -1);
+            int randomUppercasChars = rand.Next(0,UPPERCASE_CHARACTERS.Length -1);
             RNGCryptoServiceProvider rngCryptoServiceProvider = new RNGCryptoServiceProvider();
             byte[] randomBytes = new byte[keyLength];
             rngCryptoServiceProvider.GetBytes(randomBytes);
@@ -212,7 +213,7 @@ namespace Services
             {
                 hashstring += hashbyte.ToString("x2"); 
             }
-            return hashstring;
+            return UPPERCASE_CHARACTERS[randomUppercasChars] + hashstring + SPECIAL_CHARACTERS[randomSpecialCharNumber];
         }
     }
 }
