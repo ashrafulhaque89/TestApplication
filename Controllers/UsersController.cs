@@ -167,27 +167,5 @@ namespace Controllers
         {
             return Ok(_userService.ForgotPassword(model.Username));
         }
-
-        [Authorize(Roles = AccessLevel.Admin)]
-        [HttpPost("email")]
-        public async Task<IActionResult> SendEmail(SendEmailDTO model)
-        {
-            var emails = new List<string>();
-            foreach (var item in model.emails)
-            {
-                emails.Add(item);
-            }
-
-            var response = await _emailService.SendEmailAsync(emails, model.Subject, model.Message);
-
-            if (response.StatusCode == System.Net.HttpStatusCode.Accepted)
-            {
-               return Ok("Email sent " + response.StatusCode);
-            }
-            else
-            {
-                return BadRequest("Email sending failed " + response.StatusCode);
-            }
-        }
     }
 }
